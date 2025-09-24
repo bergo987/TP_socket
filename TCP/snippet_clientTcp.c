@@ -9,19 +9,35 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <errno.h>
+#define BUFFSIZE 256
 
+
+
+main (int argc, char **argv){
 int sd;
+int len;
+int s;
+
 struct sockaddr_in sa;		/* Structure Internet sockaddr_in */
 struct hostent *hptr ; 		/* Infos sur le serveur */
-
+struct servent *sp;			/* Structure service Internet */
+char *myname; 				/*pointeur sur le nom du programme*/
+char buf[BUFFSIZE];
 char *serveur ;        		/* Nom du serveur distant */
-int port;
 
+
+char *port, *user;			/* Pointeurs sur le serveur et l'utilisateur */ 
+myname = argv[0];
+
+if (argc != 3) {
+printf("Usage : %s serveur user\n", myname); exit(1);
+}
 
 /* Recuperation nom du serveur */
-serveur = argv[1];
 
+serveur = argv[1];
 /* Recuperation numero de port */
+
 port = atoi(argv[2]);
 
 /* Recuperation des infos sur le serveur dans /etc/hosts pour par DNS */
@@ -32,15 +48,38 @@ if((hptr = gethostbyname(serveur)) == NULL)
 }
 
 /* Initialisation la structure sockaddr sa avec les infos  formattees : */
-/* bcopy(void *source, void *destination, size_t taille); 		*/
 bcopy((char *)hptr->h_addr, (char*)&sa.sin_addr, hptr->h_length);
-
 /* Famille d'adresse : AF_INET ici */
 sa.sin_family = hptr->h_addrtype;
 
 /* Initialisation du numero du port */
 sa.sin_port = htons(port);
-
 char *ip_str = inet_ntoa(sa.sin_addr);
 printf("%s : %d\n", ip_str, ntohs(sa.sin_port));
-	
+
+/* Création de la socket client */
+if((s = socket (AF_INET, SOCK_STREAM, 0)) < 0){
+	perror("socket");
+	exit(1);
+}
+
+/*Connexion au serveur, infos dans la structure adresse internet sa */
+if (connect(s, &sa, sizeof(sa)) < 0){
+	perror("connect");
+	exit(1);
+}
+
+// /* Envoi de la requête */ 
+// write(s, user, strlen(user)+1);
+
+// /* Lecture de la réponse */ 
+// read(s, buf, BUFFSIZE);
+
+/* Affichage de la réponse */ 
+printf("Réponse : %s\n", buf); 
+close (s);
+
+/* Fermeture de la connexion */
+exit(0);
+}
+
