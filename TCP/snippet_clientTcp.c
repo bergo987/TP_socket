@@ -84,7 +84,7 @@ read(s, buf, BUFFSIZE);
 
 /* Affichage de la réponse */ 
 printf("Réponse : %s\n", buf); 
-sleep(0.5);
+
 close(s);
 
 
