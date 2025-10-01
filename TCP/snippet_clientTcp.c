@@ -74,13 +74,15 @@ printf("Connexion établie avec le serveur\n");
 /* Envoi de la requête */ 
 fflush(stdout);
 *user = scanf("%[^\n]", buf);
-write(s, user, sizeof(user));
+printf("Envoi de la requête : %s\n", buf);
+write(s, buf, sizeof(buf));
 
 /* Lecture de la réponse */ 
 read(s, buf, BUFFSIZE);
-write(s, buf, BUFFSIZE);
+
 /* Affichage de la réponse */ 
 printf("Réponse : %s\n", buf); 
+
 
 
 
