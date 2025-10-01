@@ -64,6 +64,7 @@ if((s = socket (AF_INET, SOCK_STREAM, 0)) < 0){
 	exit(1);
 }
 
+*user = scanf("%[^\n]", buf);
 /*Connexion au serveur, infos dans la structure adresse internet sa */
 if (connect(s, &sa, sizeof(sa)) < 0){
 	perror("connect");
@@ -73,7 +74,8 @@ printf("Connexion établie avec le serveur\n");
 
 /* Envoi de la requête */ 
 fflush(stdout);
-*user = scanf("%[^\n]", buf);
+//fflush(stdin);
+//*user = scanf("%[^\n]", buf);
 printf("Envoi de la requête : %s\n", buf);
 write(s, buf, sizeof(buf));
 
@@ -82,8 +84,8 @@ read(s, buf, BUFFSIZE);
 
 /* Affichage de la réponse */ 
 printf("Réponse : %s\n", buf); 
-
-
+sleep(0.5);
+close(s);
 
 
 
