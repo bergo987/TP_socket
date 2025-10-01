@@ -4,12 +4,13 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <string.h>
+#include <strings.h>
 
 #define MAX_REQUEST 10
+#define BUFF_SIZE 256
 
-main(argc,argv)
-int argc ;
-char *argv[] ;
+int main(int argc,char *argv[])
 {
     int sd;
     int port; 
@@ -20,7 +21,8 @@ char *argv[] ;
     struct sockaddr_in newsa; /* sockaddr_in de la connection entrante */
     int newsalength;
     int i;
-
+    char buff[BUFF_SIZE];
+    int n ; 
     /* verification du nombre d'arguments de la ligne de commande */
     if (argc != 2) {
         printf("pingserveurTCP. Erreur d'arguments\n");
@@ -54,19 +56,27 @@ char *argv[] ;
     i = 0;
 
     while(1) {
+        //fflush(stdout);// on clean le flux entrant (inutile si pas de scanf)
         /* newsalength contient la taille de la structure sa attendue */
         newsalength = sizeof(newsa) ;
         if((newsd = accept(sd, (struct sockaddr *)&newsa, &newsalength)) < 0 ) {
-        printf("Erreur sur accept\n");
-        exit(1);
+          printf("Erreur sur accept\n");
+          exit(1);
         }
         /* Compteur nombre de connexion */
         i++;
         /* nom du client */
-        printf("Connection No %d sur le port %d...\n", i, ntohs(newsa.sin_port));
-        /* Tempo pour pouvoir faire un netstat... */
-        printf("Ça marche on attend 10sec et on le vire\n");
-        sleep(10);
+        printf("Connection No %d sur le port %d...\nDebut de la discussion\n", i, ntohs(newsa.sin_port));
+       
+        /*Début de la discussion avec le client N°i*/
+        /*On écoute la connexion entrante*/
+        n = read(newsd, buff, BUFF_SIZE);
+        write(1,buff, n);// on affiche la réponse du client
+        printf("Réponse n°%d : %s\n",i,buff);
+        /*char msg[BUFF_SIZE] ;
+        scanf("%[^\n]",msg);*/
+        write(newsd, buff, n);
+        printf("fin de l'envoi au client\n ");
         close(newsd);
     }
     /* Fermeture du serveur. Never reached */
