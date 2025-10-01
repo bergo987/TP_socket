@@ -26,7 +26,8 @@ char buf[BUFFSIZE];
 char *serveur ;        		/* Nom du serveur distant */
 
 
-char *port, *user;			/* Pointeurs sur le serveur et l'utilisateur */ 
+char *port;			/* Pointeurs sur le serveur et l'utilisateur */ 
+char user[BUFFSIZE];
 myname = argv[0];
 
 if (argc != 3) {
@@ -68,16 +69,22 @@ if (connect(s, &sa, sizeof(sa)) < 0){
 	perror("connect");
 	exit(1);
 }
+printf("Connexion établie avec le serveur\n");
 
-// /* Envoi de la requête */ 
-// write(s, user, strlen(user)+1);
+/* Envoi de la requête */ 
+fflush(stdout);
+*user = scanf("%[^\n]", buf);
+write(s, user, sizeof(user));
 
-// /* Lecture de la réponse */ 
-// read(s, buf, BUFFSIZE);
-
+/* Lecture de la réponse */ 
+read(s, buf, BUFFSIZE);
+write(s, buf, BUFFSIZE);
 /* Affichage de la réponse */ 
 printf("Réponse : %s\n", buf); 
-close (s);
+
+
+
+
 
 /* Fermeture de la connexion */
 exit(0);
