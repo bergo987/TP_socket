@@ -61,12 +61,12 @@ printf("%s : %d\n", ip_str, ntohs(sa.sin_port));
 
 
 while(1){
-	
+	printf("calcul à effectuer?\n");
 	int k = read(0, buf, BUFFSIZE);
 	
 	/*Condition de sortie du serveur*/
 	if(strcmp(buf,fin)==0){
-		break;
+		exit(0);
 	}
 
 	/* Création de la socket client */
