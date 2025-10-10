@@ -15,14 +15,15 @@ char* calculatrice (char cal[]){
     int nb = 0 ;
     char s_a[BUFF_SIZE];
     char s_b[BUFF_SIZE];
-    float a; 
-    float b;
+    double a; 
+    double b;
     char op = '0';
     int m = 0 ; // longueur de a
     int j = -1 ; // indice de l'op
     int k = 0 ; // longueur de b
     int etat = 0 ; 
-    float res = 0; 
+    double res = 0; 
+    int t = 0 ; 
     char* ret = malloc(BUFF_SIZE*sizeof(char)); 
     for(int i = 0 ; i < BUFF_SIZE&& cal[i]!='\0'; i ++ ){
         if ((cal[i]== '+'|| cal[i]== '-' || cal[i]== '*'||cal[i]== '/')&& op =='0'){
@@ -34,11 +35,12 @@ char* calculatrice (char cal[]){
                 m +=1 ; 
                 s_a[i] = cal[i];
             }
-            else if (op!='0');{
+            else if (op!='0'){
                 s_b[i-j-1] = cal[i];
                 k += 1;
             }
         }
+        t ++ ; 
     }
     if((m != 0 && k != 0)&& (op != '0')){
         nb=3;
@@ -46,37 +48,38 @@ char* calculatrice (char cal[]){
     a = atof(s_a); 
     b = atof(s_b);
     if (nb == 3){
-        printf("op = %c\t j = %d\n",op,j);
-        printf("a = %f \t b = %f\n m = %d \t k = %d\n",a,b,m,k);
+    //     printf("op = %c\t j = %d\n",op,j);
+    //     printf("s_a = %s \t s_b = %s \n",s_a,s_b); 
+    //     printf("a = %f \t b = %f\n m = %d \t k = %d\n",a,b,m,k);
 
         if (op == '*'){
-            res = a*b ;
+            res = a *b ;
             etat = 1;
-            printf("res* = %f\n",res);  
+            // printf("res* = %f\n",res);  
         }
         if (op == '+'){
             res = a+b;
             etat = 1;
-            printf("res+ = %f \n ",res);  
+            // printf("res+ = %f \n ",res);  
         }
         if (op == '-'){
             res = a - b;
             etat = 1; 
-            printf("res- = %f \n ",res);  
+            // printf("res- = %f \n ",res);  
         }
         if (op == '/'){
             res = a/b;
             etat = 1;
-            printf("res/ = %f \n",res);
+            // printf("res/ = %f \n",res);
         }
         if (etat == 0 ){
             printf("on ne connait pas l'op\n");
-            sprintf("on ne connait pas l'op\n", ret); 
+            sprintf(ret,"on ne connait pas l'op\n"); 
         }
         else{
-            sprintf("%.02f",ret,res); 
-
-            printf("ret = %s \t strlen = %d \n ", ret,strlen(ret));
+            sprintf(ret,"%.02f",res); 
+            //gcvt(res,n,ret)// cela nous retourne une écriture scientifique avec n chiffres significatifs 
+            printf("ret = %s \t strlen = %lu \n ", ret,strlen(ret));
         }
     }
     
@@ -84,6 +87,7 @@ char* calculatrice (char cal[]){
     printf("Erreur dans la requette\n"); 
     ret = "Erreur dans la requette";
     }
+    // printf("on a fait %d itération lors de la recherche de l'opérateur \n", t);
     return ret ;
 }
 
@@ -101,7 +105,6 @@ int main(int argc,char *argv[])
     int i;
     char buff[BUFF_SIZE];
     int n ; 
-    char* res_calc = (char*)malloc(BUFF_SIZE*sizeof(char));
     /* verification du nombre d'arguments de la ligne de commande */
     if (argc != 2) {
         printf("pingserveurTCP. Erreur d'arguments\n");
@@ -144,24 +147,24 @@ int main(int argc,char *argv[])
         /* Compteur nombre de connexion */
         i++;
         /* nom du client */ 
-        printf("Connection No %d sur le port %d...\nDebut de la discussion\n", i, ntohs(newsa.sin_port));
+        printf("Connection N° %d sur le port %d...\nDebut de la discussion\n", i, ntohs(newsa.sin_port));
 		/*Début de la discussion avec le client N°i*/
 		/*On écoute la connexion entrante*/
 		n = read(newsd, buff, BUFF_SIZE);
-		printf("Réponse n°%d : %s\n n= %d\n",i,buff,n);
-        
+		printf("Réponse n°%d : %s\t n= %d \t taille de la répone : %lu\n ",i,buff,n,strlen(buff));
+        char* res_calc = (char*)malloc(strlen(buff)*sizeof(char));// on reserve la bonne taille mémoire
 		/*Traitement de la requête*/
 
-        res_calc = calculatrice(buff);
+        res_calc = calculatrice(buff); // on applique le programme à la calculatrice    
 
-        printf("resultat calculette = %s\n",res_calc);
+        printf("Resultat calculette = %s\n",res_calc);
 		write(newsd, res_calc, strlen(res_calc));//envoi de la reponse
-		printf("fin de l'envoi au client\n ");
+		printf("Fin de l'envoi au client\n ");
+        free(res_calc);
         close(newsd);
         
     }
     /* Fermeture du serveur. Never reached */
-    free(res_calc); 
     close(sd);
     printf("Fin du serveur. Bye...\n");
     exit(0);
