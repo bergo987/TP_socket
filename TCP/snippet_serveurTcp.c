@@ -11,7 +11,7 @@
 #define MAX_REQUEST 10
 #define BUFF_SIZE 256
 
-char* calculatrice (char cal[]){
+char* calculatrice (char cal[], int n){
     int nb = 0 ;
     char s_a[BUFF_SIZE];
     char s_b[BUFF_SIZE];
@@ -23,8 +23,7 @@ char* calculatrice (char cal[]){
     int k = 0 ; // longueur de b
     int etat = 0 ; 
     double res = 0; 
-    int t = 0 ; 
-    char* ret = malloc(BUFF_SIZE*sizeof(char)); 
+    char* ret = (char*)malloc(n*sizeof(char)); 
     for(int i = 0 ; i < BUFF_SIZE&& cal[i]!='\0'; i ++ ){
         if ((cal[i]== '+'|| cal[i]== '-' || cal[i]== '*'||cal[i]== '/')&& op =='0'){
             op = cal[i]; 
@@ -40,7 +39,6 @@ char* calculatrice (char cal[]){
                 k += 1;
             }
         }
-        t ++ ; 
     }
     if((m != 0 && k != 0)&& (op != '0')){
         nb=3;
@@ -68,26 +66,35 @@ char* calculatrice (char cal[]){
             // printf("res- = %f \n ",res);  
         }
         if (op == '/'){
-            res = a/b;
-            etat = 1;
+            if (b == 0){
+                etat = 2;   
+            }
+            else {
+                res = a/b;
+                etat = 1;
+            }
             // printf("res/ = %f \n",res);
         }
         if (etat == 0 ){
             printf("on ne connait pas l'op\n");
-            sprintf(ret,"on ne connait pas l'op\n"); 
+            sprintf(ret,"on ne connait pas l'op"); 
+        }
+        else if (etat == 2){
+            sprintf(ret,"Erreur math, division par zéro"); 
+            printf("Division par 0\n");
         }
         else{
-            sprintf(ret,"%.02f",res); 
+            sprintf(ret,"%.02f",res); // permet de convertir proprement le float en chaine de caractère
             //gcvt(res,n,ret)// cela nous retourne une écriture scientifique avec n chiffres significatifs 
             printf("ret = %s \t strlen = %lu \n ", ret,strlen(ret));
         }
     }
     
     else {
-    printf("Erreur dans la requette\n"); 
-    ret = "Erreur dans la requette";
+        printf("Erreur dans la requette\n"); 
+        sprintf(ret,"Erreur dans la requette");
     }
-    // printf("on a fait %d itération lors de la recherche de l'opérateur \n", t);
+    printf("ret = %s",ret);
     return ret ;
 }
 
@@ -155,12 +162,12 @@ int main(int argc,char *argv[])
         char* res_calc = (char*)malloc(strlen(buff)*sizeof(char));// on reserve la bonne taille mémoire
 		/*Traitement de la requête*/
 
-        res_calc = calculatrice(buff); // on applique le programme à la calculatrice    
+        res_calc = calculatrice(buff, strlen(buff)); // on applique le programme à la calculatrice    
 
         printf("Resultat calculette = %s\n",res_calc);
 		write(newsd, res_calc, strlen(res_calc));//envoi de la reponse
 		printf("Fin de l'envoi au client\n ");
-        free(res_calc);
+        free(res_calc);// on libère la mêmoire que l'on a alloué
         close(newsd);
         
     }
