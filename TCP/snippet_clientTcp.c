@@ -9,11 +9,12 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <errno.h>
+#include <unistd.h>
 #define BUFFSIZE 256
 
 
 
-main (int argc, char **argv){
+int main (int argc, char *argv[]){
 int sd;
 int len;
 int s;
@@ -24,9 +25,10 @@ struct servent *sp;			/* Structure service Internet */
 char *myname; 				/*pointeur sur le nom du programme*/
 char buf[BUFFSIZE];
 char *serveur ;        		/* Nom du serveur distant */
+char *fin = "quit";
 
-
-char *port, *user;			/* Pointeurs sur le serveur et l'utilisateur */ 
+int port;			/* Pointeurs sur le serveur et l'utilisateur */ 
+char user[BUFFSIZE];
 myname = argv[0];
 
 if (argc != 3) {
@@ -57,29 +59,46 @@ sa.sin_port = htons(port);
 char *ip_str = inet_ntoa(sa.sin_addr);
 printf("%s : %d\n", ip_str, ntohs(sa.sin_port));
 
-/* Création de la socket client */
-if((s = socket (AF_INET, SOCK_STREAM, 0)) < 0){
-	perror("socket");
-	exit(1);
+
+while(1){
+	printf("calcul à effectuer?\n");
+	int k = read(0, buf, BUFFSIZE);
+	
+	/*Condition de sortie du serveur*/
+	if(strcmp(buf,fin)==0){
+		exit(0);
+	}
+
+	/* Création de la socket client */
+	if((s = socket (AF_INET, SOCK_STREAM, 0)) < 0){
+		perror("socket");
+		exit(1);
+	}
+
+	/*Connexion au serveur, infos dans la structure adresse internet sa */
+	if (connect(s, (struct sockaddr *)&sa, sizeof(sa)) < 0){
+		perror("connect");
+		exit(1);
+	}
+	printf("Connexion établie avec le serveur\n");
+
+	/* Envoi de la requête */ 
+	fflush(stdout);
+	fflush(stdin);
+	//*user = scanf("%[^\n]", buf);
+	buf[k]='\0';
+	printf("Envoi de la requête : %s\n", buf);
+	write(s, buf, k);
+
+	/* Lecture de la réponse */ 
+	int n = read(s, buf, BUFFSIZE);
+	buf[n]='\0';
+	/* Affichage de la réponse */ 
+	printf("Réponse : %s\n", buf); 
+		
+	close(s);
 }
-
-/*Connexion au serveur, infos dans la structure adresse internet sa */
-if (connect(s, &sa, sizeof(sa)) < 0){
-	perror("connect");
-	exit(1);
-}
-
-// /* Envoi de la requête */ 
-// write(s, user, strlen(user)+1);
-
-// /* Lecture de la réponse */ 
-// read(s, buf, BUFFSIZE);
-
-/* Affichage de la réponse */ 
-printf("Réponse : %s\n", buf); 
-close (s);
 
 /* Fermeture de la connexion */
 exit(0);
 }
-
