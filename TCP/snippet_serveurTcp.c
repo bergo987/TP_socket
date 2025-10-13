@@ -46,9 +46,9 @@ char* calculatrice(char cal[], int n){
     a = atof(s_a); 
     b = atof(s_b);
     if (nb == 3){
-        printf("op = %c\t j = %d\n",op,j);
-        printf("s_a = %s \t s_b = %s \n",s_a,s_b); 
-        printf("a = %f \t b = %f\n m = %d \t k = %d\n",a,b,m,k);
+        // printf("op = %c\t j = %d\n",op,j);
+        // printf("s_a = %s \t s_b = %s \n",s_a,s_b); 
+        // printf("a = %f \t b = %f\n m = %d \t k = %d\n",a,b,m,k);
 
         if (op == '*'){
             res = a *b ;
@@ -152,18 +152,19 @@ int main(int argc,char *argv[])
           exit(1);
         }
 
-        pid_t pid = fork();
+        pid_t pid = fork(); // on crée le processus parallèle 
 
-        if (pid < 0) {
+        if (pid < 0) { // en cas de problème lors de l'initialisation du fork on ferme le socket 
         perror("Erreur fork");
         close(newsd);
         continue;
     }
 
     if (pid == 0) {
-        // === PROCESSUS FILS ===
-        close(sd); // Le fils n’a pas besoin de la socket d’écoute
-
+        // Processus de parallélisation
+        close(sd); // Le process n’a pas besoin de la socket d’écoute global 
+        // /*Début de la discussion avec le client N°i*/
+		// /*On écoute la connexion entrante*/
         char buff[BUFF_SIZE];
         int n = read(newsd, buff, BUFF_SIZE);
 
@@ -172,25 +173,25 @@ int main(int argc,char *argv[])
             close(newsd);
             exit(1);
         }
-
+         // /* nom du client */ 
         printf("Client connecté depuis le port %d : %s\n", ntohs(newsa.sin_port), buff);
 
-        char *res_calc = calculatrice(buff, strlen(buff));
+        char *res_calc = calculatrice(buff, strlen(buff));// on reserve la bonne taille mémoire
 
-        sleep(5);
-        write(newsd, res_calc, strlen(res_calc));
+        sleep(5);//simulation d'un traitement plus long pour montrer la parrallélisation
 
-        printf("Résultat envoyé : %s\n", res_calc);
+        write(newsd, res_calc, strlen(res_calc));// envoi de la réponse au bon client
+        printf("Résultat envoyé : %s\n", res_calc); 
 
         free(res_calc);
-        close(newsd);
-        exit(0); // Le fils se termine
+        close(newsd); // fermeture de la connexion avec le client 
+        exit(0); // fin du process
     } 
     else{
-        close(newsd);   
+        close(newsd);   // on ferme le socket de la connexion si on ne rentre dans aucun des autres cas 
     }
 
-    
+        //script sans parrallélisation
         // /* Compteur du nombre de connexion */
         // i++;
         // /* nom du client */ 
