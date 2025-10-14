@@ -8,10 +8,10 @@
 #include <string.h>
 #include <strings.h>
 
-#define MAX_REQUEST 10
-#define BUFF_SIZE 256
+#define MAX_REQUEST 10 // nombre maximal de client que le serveur peut gérer en même temps
+#define BUFF_SIZE 256 // taille max du buffer 
 
-char* calculatrice (char cal[], int n){
+char* calculatrice(char cal[], int n){
     int nb = 0 ;
     char s_a[BUFF_SIZE];
     char s_b[BUFF_SIZE];
@@ -23,8 +23,8 @@ char* calculatrice (char cal[], int n){
     int k = 0 ; // longueur de b
     int etat = 0 ; 
     double res = 0; 
-    char* ret = (char*)malloc(n*sizeof(char)); 
-    for(int i = 0 ; i < BUFF_SIZE&& cal[i]!='\0'; i ++ ){
+    char* ret = (char*)malloc((n+1)*sizeof(char)); // all
+    for(int i = 0 ; i < n&& cal[i]!='\0'; i ++ ){
         if ((cal[i]== '+'|| cal[i]== '-' || cal[i]== '*'||cal[i]== '/')&& op =='0'){
             op = cal[i]; 
             j = i ; 
@@ -46,9 +46,9 @@ char* calculatrice (char cal[], int n){
     a = atof(s_a); 
     b = atof(s_b);
     if (nb == 3){
-    //     printf("op = %c\t j = %d\n",op,j);
-    //     printf("s_a = %s \t s_b = %s \n",s_a,s_b); 
-    //     printf("a = %f \t b = %f\n m = %d \t k = %d\n",a,b,m,k);
+        // printf("op = %c\t j = %d\n",op,j);
+        // printf("s_a = %s \t s_b = %s \n",s_a,s_b); 
+        // printf("a = %f \t b = %f\n m = %d \t k = %d\n",a,b,m,k);
 
         if (op == '*'){
             res = a *b ;
@@ -94,7 +94,7 @@ char* calculatrice (char cal[], int n){
         printf("Erreur dans la requette\n"); 
         sprintf(ret,"Erreur dans la requette");
     }
-    printf("ret = %s",ret);
+    printf("ret = %s\n",ret);
     return ret ;
 }
 
@@ -107,18 +107,18 @@ int main(int argc,char *argv[])
 
     /* Structure Internet sockaddr_in */
     int newsd; /* Id de la socket entrante */
-    struct sockaddr_in newsa; /* sockaddr_in de la connection entrante */
-    int newsalength;
+    struct sockaddr_in newsa; /* adresse de la socket de la connection entrante */
+    int newsalength; /*taille de l'adresse de la nous */
     int i;
-    char buff[BUFF_SIZE];
+    char buff[BUFF_SIZE]; /*initialisation du buffer*/
     int n ; 
     /* verification du nombre d'arguments de la ligne de commande */
     if (argc != 2) {
-        printf("pingserveurTCP. Erreur d'arguments\n");
-        printf("Syntaxe : %% pingserveurTCP numero_port\n");
+        printf("serveurTCP. Erreur d'arguments\n");
+        printf("Syntaxe : %% snippet_serveurTCP numero_port\n");
         exit(1);
     }
-    /* Recuperation numero port passe en argument */
+    /* Recuperation numero port que l'on a passe en argument */
     port = atoi(argv[1]);
 
     /* Initialisation la structure sockaddr sa */
@@ -145,31 +145,72 @@ int main(int argc,char *argv[])
     i = 0;
 
     while(1) {
-        /* newsalength contient la taille de la structure sa attendue */
+        /* newsalength contient la taille de la structure de la nouvelle connection sa */
         newsalength = sizeof(newsa) ;
         if((newsd = accept(sd, (struct sockaddr *)&newsa, &newsalength)) < 0 ) {
           printf("Erreur sur accept\n");
           exit(1);
         }
-        /* Compteur nombre de connexion */
-        i++;
-        /* nom du client */ 
-        printf("Connection N° %d sur le port %d...\nDebut de la discussion\n", i, ntohs(newsa.sin_port));
-		/*Début de la discussion avec le client N°i*/
-		/*On écoute la connexion entrante*/
-		n = read(newsd, buff, BUFF_SIZE);
-		printf("Réponse n°%d : %s\t n= %d \t taille de la répone : %lu\n ",i,buff,n,strlen(buff));
-        char* res_calc = (char*)malloc(strlen(buff)*sizeof(char));// on reserve la bonne taille mémoire
-		/*Traitement de la requête*/
 
-        res_calc = calculatrice(buff, strlen(buff)); // on applique le programme à la calculatrice    
+        pid_t pid = fork(); // on crée le processus parallèle 
 
-        printf("Resultat calculette = %s\n",res_calc);
-		write(newsd, res_calc, strlen(res_calc));//envoi de la reponse
-		printf("Fin de l'envoi au client\n ");
-        free(res_calc);// on libère la mêmoire que l'on a alloué
+        if (pid < 0) { // en cas de problème lors de l'initialisation du fork on ferme le socket 
+        perror("Erreur fork");
         close(newsd);
+        continue;
+    }
+
+    if (pid == 0) {
+        // Processus de parallélisation
+        close(sd); // Le process n’a pas besoin de la socket d’écoute global 
+        // /*Début de la discussion avec le client N°i*/
+		// /*On écoute la connexion entrante*/
+        char buff[BUFF_SIZE];
+        int n = read(newsd, buff, BUFF_SIZE);
+
+        if (n <= 0) {
+            perror("Erreur lecture client");
+            close(newsd);
+            exit(1);
+        }
+         // /* nom du client */ 
+        printf("Client connecté depuis le port %d : %s\n", ntohs(newsa.sin_port), buff);
+
+        char *res_calc = calculatrice(buff, strlen(buff));// on reserve la bonne taille mémoire
+
+        sleep(5);//simulation d'un traitement plus long pour montrer la parrallélisation
+
+        write(newsd, res_calc, strlen(res_calc));// envoi de la réponse au bon client
+        printf("Résultat envoyé : %s\n", res_calc); 
+
+        free(res_calc);
+        close(newsd); // fermeture de la connexion avec le client 
+        exit(0); // fin du process
+    } 
+    else{
+        close(newsd);   // on ferme le socket de la connexion si on ne rentre dans aucun des autres cas 
+    }
+
+        //script sans parrallélisation
+        // /* Compteur du nombre de connexion */
+        // i++;
+        // /* nom du client */ 
+        // printf("Connection N° %d sur le port %d...\nDebut de la discussion\n", i, ntohs(newsa.sin_port));
+		// /*Début de la discussion avec le client N°i*/
+		// /*On écoute la connexion entrante*/
+		// n = read(newsd, buff, BUFF_SIZE);
+		// printf("Réponse n°%d : %s\t n= %d \t taille de la répone : %lu\n ",i,buff,n,strlen(buff));
+        // char* res_calc = (char*)malloc(strlen(buff)*sizeof(char));// on reserve la bonne taille mémoire
         
+		// /*Traitement de la requête*/
+        // res_calc = calculatrice(buff, strlen(buff)); // on applique le programme à la calculatrice    
+        // sleep(5);
+        // printf("Resultat calculette = %s\n",res_calc);
+		// write(newsd, res_calc, strlen(res_calc));//envoi de la reponse
+		// printf("Fin de l'envoi au client\n ");
+        // free(res_calc);// on libère la mêmoire que l'on a alloué
+        // close(newsd);
+    
     }
     /* Fermeture du serveur. Never reached */
     close(sd);
