@@ -100,7 +100,46 @@ while(quit){
 		close(s);
 	}
 }
+
+while(1){
+	printf("calcul à effectuer?\n");
+	int k = read(0, buf, BUFFSIZE);
+	
+	/*Condition de sortie du serveur*/
+	if(strcmp(buf,fin)==0){
+		exit(0);
+	}
+
+	/* Création de la socket client */
+	if((s = socket (AF_INET, SOCK_STREAM, 0)) < 0){
+		perror("socket");
+		exit(1);
+	}
+
+	/*Connexion au serveur, infos dans la structure adresse internet sa */
+	if (connect(s, (struct sockaddr *)&sa, sizeof(sa)) < 0){
+		perror("connect");
+		exit(1);
+	}
+	printf("Connexion établie avec le serveur\n");
+
+	/* Envoi de la requête */ 
+	fflush(stdout);
+	fflush(stdin);
+	//*user = scanf("%[^\n]", buf);
+	buf[k]='\0';
+	printf("Envoi de la requête : %s\n", buf);
+	write(s, buf, k);
+
+	/* Lecture de la réponse */ 
+	int n = read(s, buf, BUFFSIZE);
+	buf[n]='\0';
+	/* Affichage de la réponse */ 
+	printf("Réponse : %s\n", buf); 
+		
+	close(s);
+}
+
 /* Fermeture de la connexion */
 exit(0);
 }
-

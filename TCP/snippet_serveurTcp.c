@@ -1,90 +1,178 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <strings.h>
-#include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <unistd.h>
 #include <netdb.h>
-#define BUFFSIZE 256
+#include <string.h>
+#include <strings.h>
 
-  /* Taille de la file d'attente  initialisé par listen*/
-#define BACKLOG 10
-#define MAXHOSTNAME 64
+#define MAX_REQUEST 10
+#define BUFF_SIZE 256
 
-/* Nombres de requiêtes traitées par le programme */
-#define MAXREQ 10
-
-int main(int argc,char **argv)
-{
-  int s ,t ; // descripteur de socket 
-  int count_req; 
-  int i ; 
-
-  void quiest();
-  struct sockaddr_in sa;	/* Structure Internet sockaddr_in */
-  struct hostent *hptr; 	/* Infos sur le serveur */
-  struct servent *sp ; /* Structure service internet */
-  int port;        		/* Numero de port du serveur */
-  int newsd;			/* Id de la socket entrante */
-  struct sockaddr_in newsa;	/* sockaddr_in de la connection entrante */
-  int newsalength;
-  struct hostent *newhptr; 	/* Infos sur le client suivant /etc/hosts */
-
-  port = atoi(argv[1]);
-
-  /* Initialisation la structure sockaddr sa */
-  /* Famille d'adresse : AF_INET = PF_INET */
-  sa.sin_family = AF_INET;
-
-  /* Initialisation du numero du port */
-  sa.sin_port = htons(port);
-  sa.sin_addr.s_addr = INADDR_ANY;
-
-  char localhost[MAXHOSTNAME]; 
-  /* Recuperation du numéro de port serveur dans la structure sa */
-  sa.sin_port = htons(port) ; 
-
-  /* création de la socket */
-  s = socket(AF_INET , SOCK_STREAM,0); 
-  if (s <0 ){
-    perror("Serveur : problème lors de la création socket"); 
-    exit (1); 
-  }
-
-  /* Lien socket avec adresse IP et Port */
-  if(bind(s,&sa, sizeof(sa))<0){
-    printf("Serveur : problème bind \n"); 
-    exit(1); 
-  }
-  listen(s,BACKLOG); 
-  printf("Serveur TCP en écoute\n");
-
-  for (count_req = 0 ; count_req <= MAXREQ ; count_req++){
-    /* Attend une requête sur la primitive accept */
-    i = sizeof(newsa); 
-    newsalength = sizeof(newsa) ;
-    newsd = accept(s, &newsa, &newsalength);
-    if(newsd < 0){
-      printf("Erreur sur accept\n");
-      exit(1);
+char* calculatrice (char cal[], int n){
+    int nb = 0 ;
+    char s_a[BUFF_SIZE];
+    char s_b[BUFF_SIZE];
+    double a; 
+    double b;
+    char op = '0';
+    int m = 0 ; // longueur de a
+    int j = -1 ; // indice de l'op
+    int k = 0 ; // longueur de b
+    int etat = 0 ; 
+    double res = 0; 
+    char* ret = (char*)malloc(n*sizeof(char)); 
+    for(int i = 0 ; i < BUFF_SIZE&& cal[i]!='\0'; i ++ ){
+        if ((cal[i]== '+'|| cal[i]== '-' || cal[i]== '*'||cal[i]== '/')&& op =='0'){
+            op = cal[i]; 
+            j = i ; 
+        }
+        else {
+            if (j == -1 ){
+                m +=1 ; 
+                s_a[i] = cal[i];
+            }
+            else if (op!='0'){
+                s_b[i-j-1] = cal[i];
+                k += 1;
+            }
+        }
     }
+    if((m != 0 && k != 0)&& (op != '0')){
+        nb=3;
+    }
+    a = atof(s_a); 
+    b = atof(s_b);
+    if (nb == 3){
+    //     printf("op = %c\t j = %d\n",op,j);
+    //     printf("s_a = %s \t s_b = %s \n",s_a,s_b); 
+    //     printf("a = %f \t b = %f\n m = %d \t k = %d\n",a,b,m,k);
 
-    printf("Connection N° %d sur le port %d...\n", i, ntohs(newsa.sin_port));
-    printf("Requête n° %d\n", count_req); 
-    sleep(10);
-    /* Traitement de la requête*/
-    quiest();
-    close(t); 
-  }
-  /* Fermeture de la socket reserve  */
-  close(s); 
-  printf("fin de service pour %s\n", localhost);
-  exit(0); 
+        if (op == '*'){
+            res = a *b ;
+            etat = 1;
+            // printf("res* = %f\n",res);  
+        }
+        if (op == '+'){
+            res = a+b;
+            etat = 1;
+            // printf("res+ = %f \n ",res);  
+        }
+        if (op == '-'){
+            res = a - b;
+            etat = 1; 
+            // printf("res- = %f \n ",res);  
+        }
+        if (op == '/'){
+            if (b == 0){
+                etat = 2;   
+            }
+            else {
+                res = a/b;
+                etat = 1;
+            }
+            // printf("res/ = %f \n",res);
+        }
+        if (etat == 0 ){
+            printf("on ne connait pas l'op\n");
+            sprintf(ret,"on ne connait pas l'op"); 
+        }
+        else if (etat == 2){
+            sprintf(ret,"Erreur math, division par zéro"); 
+            printf("Division par 0\n");
+        }
+        else{
+            sprintf(ret,"%.02f",res); // permet de convertir proprement le float en chaine de caractère
+            //gcvt(res,n,ret)// cela nous retourne une écriture scientifique avec n chiffres significatifs 
+            printf("ret = %s \t strlen = %lu \n ", ret,strlen(ret));
+        }
+    }
+    
+    else {
+        printf("Erreur dans la requette\n"); 
+        sprintf(ret,"Erreur dans la requette");
+    }
+    printf("ret = %s",ret);
+    return ret ;
 }
 
-void quiest(){ /* Traitement de la requête */
-  printf("Je suis trop fort\n");
 
+int main(int argc,char *argv[])
+{
+    int sd;
+    int port; 
+    struct sockaddr_in sa; /* Numero de port du serveur */
+
+    /* Structure Internet sockaddr_in */
+    int newsd; /* Id de la socket entrante */
+    struct sockaddr_in newsa; /* sockaddr_in de la connection entrante */
+    int newsalength;
+    int i;
+    char buff[BUFF_SIZE];
+    int n ; 
+    /* verification du nombre d'arguments de la ligne de commande */
+    if (argc != 2) {
+        printf("pingserveurTCP. Erreur d'arguments\n");
+        printf("Syntaxe : %% pingserveurTCP numero_port\n");
+        exit(1);
+    }
+    /* Recuperation numero port passe en argument */
+    port = atoi(argv[1]);
+
+    /* Initialisation la structure sockaddr sa */
+    /* Famille d'adresse : AF_INET = PF_INET */
+    sa.sin_family = AF_INET;
+
+    /* Initialisation du numero du port */
+    sa.sin_port = htons(port);
+    sa.sin_addr.s_addr = INADDR_ANY;
+
+    /* Creation de la socket TCP */
+    if((sd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        printf("Probleme lors de la creation de socket\n");
+        exit(1);
+    }
+    /* Bind sur la socket */
+    if(bind(sd, (struct sockaddr *)&sa, sizeof(sa)) == -1) {
+        printf("Probleme avec le bind\n");
+        exit(1);
+    }
+    /* Initialisation de la queue d'ecoute des requetes*/
+    listen(sd, MAX_REQUEST);
+    printf("Serveur TCP en ecoute...\n");
+    i = 0;
+
+    while(1) {
+        /* newsalength contient la taille de la structure sa attendue */
+        newsalength = sizeof(newsa) ;
+        if((newsd = accept(sd, (struct sockaddr *)&newsa, &newsalength)) < 0 ) {
+          printf("Erreur sur accept\n");
+          exit(1);
+        }
+        /* Compteur nombre de connexion */
+        i++;
+        /* nom du client */ 
+        printf("Connection N° %d sur le port %d...\nDebut de la discussion\n", i, ntohs(newsa.sin_port));
+		/*Début de la discussion avec le client N°i*/
+		/*On écoute la connexion entrante*/
+		n = read(newsd, buff, BUFF_SIZE);
+		printf("Réponse n°%d : %s\t n= %d \t taille de la répone : %lu\n ",i,buff,n,strlen(buff));
+        char* res_calc = (char*)malloc(strlen(buff)*sizeof(char));// on reserve la bonne taille mémoire
+		/*Traitement de la requête*/
+
+        res_calc = calculatrice(buff, strlen(buff)); // on applique le programme à la calculatrice    
+
+        printf("Resultat calculette = %s\n",res_calc);
+		write(newsd, res_calc, strlen(res_calc));//envoi de la reponse
+		printf("Fin de l'envoi au client\n ");
+        free(res_calc);// on libère la mêmoire que l'on a alloué
+        close(newsd);
+        
+    }
+    /* Fermeture du serveur. Never reached */
+    close(sd);
+    printf("Fin du serveur. Bye...\n");
+    exit(0);
 }
