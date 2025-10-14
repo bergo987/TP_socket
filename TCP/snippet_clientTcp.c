@@ -59,6 +59,47 @@ sa.sin_port = htons(port);
 char *ip_str = inet_ntoa(sa.sin_addr);
 printf("%s : %d\n", ip_str, ntohs(sa.sin_port));
 
+int quit = 1;
+while(quit){
+	printf("calcul à effectuer?\n");
+	int k = read(0, buf, BUFFSIZE);
+	buf[k - 1] = '\0';
+	/*Condition de sortie du serveur*/
+	if(strcmp(buf,fin)==0){
+		printf("on quitte\n");
+		quit = 0;
+	}
+	else{
+		/* Création de la socket client */
+		if((s = socket (AF_INET, SOCK_STREAM, 0)) < 0){
+			perror("socket");
+			exit(1);
+		}
+
+		/*Connexion au serveur, infos dans la structure adresse internet sa */
+		if (connect(s, (struct sockaddr *)&sa, sizeof(sa)) < 0){
+			perror("connect");
+			exit(1);
+		}
+		printf("Connexion établie avec le serveur\n");
+
+		/* Envoi de la requête */ 
+		fflush(stdout);
+		fflush(stdin);
+		//*user = scanf("%[^\n]", buf);
+		buf[k]='\0';
+		printf("Envoi de la requête : %s\n", buf);
+		write(s, buf, k);
+
+		/* Lecture de la réponse */ 
+		int n = read(s, buf, BUFFSIZE);
+		buf[n]='\0';
+		/* Affichage de la réponse */ 
+		printf("Réponse : %s\n", buf); 
+			
+		close(s);
+	}
+}
 
 while(1){
 	printf("calcul à effectuer?\n");
