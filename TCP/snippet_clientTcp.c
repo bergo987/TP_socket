@@ -35,111 +35,63 @@ if (argc != 3) {
 printf("Usage : %s serveur user\n", myname); exit(1);
 }
 
-/* Recuperation nom du serveur */
+serveur = argv[1]; /* Recuperation nom du serveur */
 
-serveur = argv[1];
-/* Recuperation numero de port */
+port = atoi(argv[2]); /* Recuperation numero de port */
 
-port = atoi(argv[2]);
 
-/* Recuperation des infos sur le serveur dans /etc/hosts pour par DNS */
-if((hptr = gethostbyname(serveur)) == NULL) 
+if((hptr = gethostbyname(serveur)) == NULL) /* Recuperation des infos sur le serveur dans /etc/hosts pour par DNS */
 {
 	printf("Probleme de recuperation d'infos sur le serveur\n");
 	exit(1);
 }
 
-/* Initialisation la structure sockaddr sa avec les infos  formattees : */
-bcopy((char *)hptr->h_addr, (char*)&sa.sin_addr, hptr->h_length);
-/* Famille d'adresse : AF_INET ici */
-sa.sin_family = hptr->h_addrtype;
+bcopy((char *)hptr->h_addr, (char*)&sa.sin_addr, hptr->h_length); /* Initialisation la structure sockaddr sa avec les infos  formattees : */
 
-/* Initialisation du numero du port */
-sa.sin_port = htons(port);
+sa.sin_family = hptr->h_addrtype; /* Famille d'adresse : AF_INET ici */
+
+
+sa.sin_port = htons(port); /* Initialisation du numero du port */
 char *ip_str = inet_ntoa(sa.sin_addr);
 printf("%s : %d\n", ip_str, ntohs(sa.sin_port));
 
 int quit = 1;
-while(quit){
+while(quit){ /*boucle pour pouvoir faire plusieurs demandes de calcul*/
 	printf("calcul à effectuer?\n");
 	int k = read(0, buf, BUFFSIZE);
 	buf[k - 1] = '\0';
-	/*Condition de sortie du serveur*/
-	if(strcmp(buf,fin)==0){
+	
+	if(strcmp(buf,fin)==0){ /*Condition de sortie du serveur*/
 		printf("on quitte\n");
 		quit = 0;
 	}
 	else{
-		/* Création de la socket client */
-		if((s = socket (AF_INET, SOCK_STREAM, 0)) < 0){
+		if((s = socket (AF_INET, SOCK_STREAM, 0)) < 0){ /* Création de la socket client */
 			perror("socket");
 			exit(1);
 		}
 
-		/*Connexion au serveur, infos dans la structure adresse internet sa */
-		if (connect(s, (struct sockaddr *)&sa, sizeof(sa)) < 0){
+		if (connect(s, (struct sockaddr *)&sa, sizeof(sa)) < 0){ /*Connexion au serveur, infos dans la structure adresse internet sa */
 			perror("connect");
 			exit(1);
 		}
 		printf("Connexion établie avec le serveur\n");
 
-		/* Envoi de la requête */ 
-		fflush(stdout);
+		fflush(stdout); /* Envoi de la requête */ 
 		fflush(stdin);
-		//*user = scanf("%[^\n]", buf);
+
 		buf[k]='\0';
 		printf("Envoi de la requête : %s\n", buf);
 		write(s, buf, k);
 
-		/* Lecture de la réponse */ 
-		int n = read(s, buf, BUFFSIZE);
+		int n = read(s, buf, BUFFSIZE); /* Lecture de la réponse */ 
 		buf[n]='\0';
-		/* Affichage de la réponse */ 
-		printf("Réponse : %s\n", buf); 
+		
+		printf("Réponse : %s\n", buf);  /* Affichage de la réponse */ 
 			
 		close(s);
 	}
 }
 
-while(1){
-	printf("calcul à effectuer?\n");
-	int k = read(0, buf, BUFFSIZE);
-	
-	/*Condition de sortie du serveur*/
-	if(strcmp(buf,fin)==0){
-		exit(0);
-	}
-
-	/* Création de la socket client */
-	if((s = socket (AF_INET, SOCK_STREAM, 0)) < 0){
-		perror("socket");
-		exit(1);
-	}
-
-	/*Connexion au serveur, infos dans la structure adresse internet sa */
-	if (connect(s, (struct sockaddr *)&sa, sizeof(sa)) < 0){
-		perror("connect");
-		exit(1);
-	}
-	printf("Connexion établie avec le serveur\n");
-
-	/* Envoi de la requête */ 
-	fflush(stdout);
-	fflush(stdin);
-	//*user = scanf("%[^\n]", buf);
-	buf[k]='\0';
-	printf("Envoi de la requête : %s\n", buf);
-	write(s, buf, k);
-
-	/* Lecture de la réponse */ 
-	int n = read(s, buf, BUFFSIZE);
-	buf[n]='\0';
-	/* Affichage de la réponse */ 
-	printf("Réponse : %s\n", buf); 
-		
-	close(s);
-}
-
-/* Fermeture de la connexion */
-exit(0);
+exit(0); /* Fermeture de la connexion */
 }
