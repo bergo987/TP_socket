@@ -23,7 +23,7 @@ char* calculatrice(char cal[], int n){
     int k = 0 ; // longueur de b
     int etat = 0 ; 
     double res = 0; 
-    char* ret = (char*)malloc((n+1)*sizeof(char)); // all
+    char* ret = (char*)malloc((n+1)*sizeof(char)); // allocation de la mémoire
     for(int i = 0 ; i < n&& cal[i]!='\0'; i ++ ){
         if ((cal[i]== '+'|| cal[i]== '-' || cal[i]== '*'||cal[i]== '/')&& op =='0'){
             op = cal[i]; 
